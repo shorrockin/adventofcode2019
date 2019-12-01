@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # Advent Boilerplate Start
 require 'pry'
 
@@ -82,6 +83,7 @@ def log_call_on(target, method, *args)
 end
 
 def input
+  return @input.dup unless @input.nil?
   if ARGV.length == 0
     raise "no input provided, please specify file as command line arg"
   end
