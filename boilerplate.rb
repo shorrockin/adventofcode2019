@@ -17,7 +17,7 @@ module Loggable
     @log_depth ||= "  "
     out = nil
 
-    puts "#{@log_depth}#{s} #{args.map(&:to_s).join(", ")}" if @logging;
+    puts "#{@log_depth}#{s} #{args.map(&:to_s).join(", ")}" unless !@logging;
 
     if block_given?
       original_depth = @log_depth
@@ -83,12 +83,16 @@ def log_call_on(target, method, *args)
 end
 
 def input
+  # ARGV can only be used once
   return @input.dup unless @input.nil?
+
   if ARGV.length == 0
     raise "no input provided, please specify file as command line arg"
   end
+
   @input ||= $<.map(&:to_s)
-  @input.length == 1 ? @input[0].dup : @input.dup # prevents alterations to source
+  @input = @input[0] if @input.length == 1
+  @input.dup # prevents alterations to source
 end
 
 def part(num, &block)
