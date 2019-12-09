@@ -22,10 +22,10 @@ def run(instructions)
 end
 
 part 1 do
-  assert_call_on(run("1,0,0,0,99"), [2,0,0,0,99] , :memory)
-  assert_call_on(run("2,3,0,3,99"), [2,3,0,6,99] , :memory)
-  assert_call_on(run("2,4,4,5,99,0"), [2,4,4,5,99,9801] , :memory)
-  assert_call_on(run("1,1,1,4,99,5,6,0,99"), [30,1,1,4,2,5,6,0,99] , :memory)
+  assert_call_on(run("1,0,0,0,99"), [2,0,0,0,99] , :program)
+  assert_call_on(run("2,3,0,3,99"), [2,3,0,6,99] , :program)
+  assert_call_on(run("2,4,4,5,99,0"), [2,4,4,5,99,9801] , :program)
+  assert_call_on(run("1,1,1,4,99,5,6,0,99"), [30,1,1,4,2,5,6,0,99] , :program)
   
   log_call_on(run_with(12, 2).memory, :[], 0) # 4576384
 end
@@ -37,7 +37,7 @@ part 2 do
   # which is passed in perhaps?
   (0..99).each do |noun|
     (0..99).each do |verb|
-      memory = run_with(noun, verb).memory
+      memory = run_with(noun, verb).program
       if memory[0] == expected 
         puts "  #{'-'.yellow} 100 * #{noun.to_s.green}(noun) + #{verb.to_s.green}(verb) = #{(100 * noun + verb).to_s.green}(answer)"
         return
