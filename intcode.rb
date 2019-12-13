@@ -37,6 +37,11 @@ class Intcode < Boilerstate
       @inputs = @inputs + new_inputs
     end
 
+    if (@halted)
+      @halted = false
+      @address = 0
+    end
+
     while(@program[@address] != Codes::Halt)
       command = @program[@address] % 100
       modes   = (@program[@address] / 100).to_s.chars.map(&:to_i).reverse
@@ -51,6 +56,7 @@ class Intcode < Boilerstate
         elsif command == Codes::Multiply 
           write(set_address, left_param * right_param)
         elsif command == Codes::LessThan
+          binding.pry if left_param.nil?
           write(set_address, left_param < right_param ? 1 : 0)
         elsif command == Codes::Equals
           write(set_address, left_param == right_param ? 1 : 0)
@@ -59,7 +65,8 @@ class Intcode < Boilerstate
         end
         @address += 4
       elsif command == Codes::ReadInput
-        write(param_index(modes, @address, 0), @inputs.shift)
+        input = @options[:retain_input] ? @inputs.last : @inputs.shift
+        write(param_index(modes, @address, 0), input)
         @address += 2
       elsif command == Codes::WriteOutput
         out_value = read(modes, @address, 0) 
