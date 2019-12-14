@@ -9,46 +9,52 @@ Tile = Struct.new(:x, :y, :id)
 
 class Game < Boilerstate
   attr_accessor :program, :score, :positions, :ball, :paddle
+
   def parse(input)
-    @program = Intcode.new(input, retain_input: true, block_on_output: true)
+    @program = Intcode.new(input, reader: @options[:reader]) 
     @positions = {}
   end
 
-  def run(input = nil)
-    while(true)
-      x, y, id = [program.run(input), program.run(input), program.run(input)]
-      
-      if x == -1 && y == 0
-        @score = id
-      else
-        tile = Tile.new(x, y, id)
-        @positions[[x, y]] = Tile.new(x, y, id)
-        @ball = tile if id == 4
-        @paddle = tile if id == 3
-      end
+  def run(&blk)
+    output = []
+    program.writer = Proc.new do |value|
+      output << value
+      if output.length == 3
+        x, y, id = output
 
-      break if id == 4 # return once we update the ball
+        if x == -1 && y == 0
+          @score = id
+        else
+          tile = Tile.new(x, y, id)
+          @positions[[x, y]] = tile
+          @ball = tile if id == 4
+          @paddle = tile if id == 3
+          yield if id == 4 && block_given?
+        end
+
+        output = []
+      end
     end
+
+    program.run
   end
 
   def stringify
+    str = "SCORE: #{score}\n"
     sort_x = @positions.values.sort_by(&:x)
     sort_y = @positions.values.sort_by(&:y)
-    min_x = sort_x.first.x
-    max_x = sort_x.last.x
-    min_y = sort_y.first.y
-    max_y = sort_y.last.y
-    str   = "Score: #{score}\n"
+    min_x, max_x = [sort_x.first.x, sort_x.last.x]
+    min_y, max_y = [sort_y.first.y, sort_y.last.y]
 
     (min_y..max_y).each do |y|
       (min_x..max_x).each do |x|
         if (tile = @positions[[x, y]])
           str = str + (case tile.id
           when 0 then ' '
-          when 1 then 'x'
-          when 2 then '■'
-          when 3 then '='
-          when 4 then 'o'
+          when 1 then '█'.red
+          when 2 then '█'.blue
+          when 3 then '='.bold
+          when 4 then '●'.teal
           else; ' '; end)
         end
       end
@@ -60,32 +66,27 @@ end
 
 
 part 1 do
-  # game = Game.new(input)
-  # game.run
-  # puts "Blocks: #{game.tiles.select {|t| t.id == 2 }.length}" # 348
+  game = Game.new(input)
+  game.run
+  assert_equal(348, game.positions.values.select {|t| t.id == 2 }.length, "game.blocks.length")
 end
 
 part 2 do
-  running = true
-  game = Game.new(input)
-  game.program.program[0] = 2
-  game.run(0)
+  direction = 0
 
-  while(running)
+  game = Game.new(input, reader: -> {direction})
+  game.program.write(0, 2)
+
+  game.run do
     puts `clear`
     puts game.stringify
 
-    ball = game.positions.values.find {|t| t.id == 4}
-    tile = game.positions.values.find {|t| t.id == 3}
-
-    if tile.nil?
-      game.run(0)
-    elsif ball.x > tile.x
-      game.run(1)
-    elsif ball.x == tile.x
-      game.run(0)
-    else
-      game.run(-1)
+    if !game.paddle.nil? && !game.ball.nil?
+      direction = game.ball.x <=> game.paddle.x
     end
   end
+
+  # draw it one more time now that the game has finished
+  puts `clear`
+  puts game.stringify
 end

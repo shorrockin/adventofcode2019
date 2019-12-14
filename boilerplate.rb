@@ -8,6 +8,9 @@ class String
   def green; colorize(32); end
   def yellow; colorize(33); end
   def blue; colorize(34); end
+  def pink; colorize(35); end
+  def teal; colorize(36); end
+  def bold; colorize(1); end
 end
 
 module Loggable

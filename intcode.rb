@@ -19,25 +19,22 @@ class Intcode < Boilerstate
   attr_accessor :output
   attr_accessor :halted
   attr_accessor :address
-  attr_accessor :inputs
   attr_accessor :relative_base
+  attr_accessor :reader
+  attr_accessor :writer
 
   def parse(input)
     @halted        = false
     @address       = 0
     @program       = input.split(',').map(&:to_i)
     @memory        = {}
-    @inputs        = @options[:initial_inputs] || []
+    @reader        = @options[:reader] 
+    @writer        = @options[:writer]
     @relative_base = 0
   end
 
-  def run(new_inputs = nil)
-    if !new_inputs.nil?
-      new_inputs = [new_inputs] unless new_inputs.is_a?(Array)
-      @inputs = @inputs + new_inputs
-    end
-
-    if (@halted)
+  def run
+    if (@halted) # some programs can be restarted after they've been halted
       @halted = false
       @address = 0
     end
@@ -56,7 +53,6 @@ class Intcode < Boilerstate
         elsif command == Codes::Multiply 
           write(set_address, left_param * right_param)
         elsif command == Codes::LessThan
-          binding.pry if left_param.nil?
           write(set_address, left_param < right_param ? 1 : 0)
         elsif command == Codes::Equals
           write(set_address, left_param == right_param ? 1 : 0)
@@ -65,21 +61,13 @@ class Intcode < Boilerstate
         end
         @address += 4
       elsif command == Codes::ReadInput
-        input = @options[:retain_input] ? @inputs.last : @inputs.shift
-        write(param_index(modes, @address, 0), input)
+        raise "reader not set" if @reader.nil?
+        write(param_index(modes, @address, 0), @reader.call)
         @address += 2
       elsif command == Codes::WriteOutput
-        out_value = read(modes, @address, 0) 
-
-        if @output.nil? || @options[:block_on_output]
-          @output = out_value
-        else
-          @output = [@output] unless @output.is_a?(Array)
-          @output << out_value
-        end
-
+        raise "writer not set" if @writer.nil?
+        @writer.call(read(modes, @address, 0))
         @address += 2
-        return out_value if @options[:block_on_output]
       elsif command == Codes::OffsetRelative
         @relative_base += read(modes, @address, 0)
         @address += 2
@@ -98,7 +86,6 @@ class Intcode < Boilerstate
     @relative_base = 0
     @address       = 0
     @halted        = true
-    @output 
   end
 
   def write(index, value)
