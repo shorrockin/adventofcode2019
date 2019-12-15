@@ -39,7 +39,7 @@ class Intcode < Boilerstate
       @address = 0
     end
 
-    while(@program[@address] != Codes::Halt)
+    while(@program[@address] != Codes::Halt && !@halted)
       command = @program[@address] % 100
       modes   = (@program[@address] / 100).to_s.chars.map(&:to_i).reverse
 
