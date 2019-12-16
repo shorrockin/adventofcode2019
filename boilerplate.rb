@@ -85,7 +85,7 @@ def log_call_on(target, method, *args)
   puts "  #{'-'.yellow} #{method}(#{arg_description}) == #{value_string(result)}"
 end
 
-def input
+def input(strip_newlines = true)
   # ARGV can only be used once
   return @input.dup unless @input.nil?
 
@@ -94,6 +94,7 @@ def input
   end
 
   @input ||= $<.map(&:to_s)
+  @input = input.map(&:strip) if strip_newlines
   @input = @input[0] if @input.length == 1
   @input.dup # prevents alterations to source
 end
