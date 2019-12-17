@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 # Advent Boilerplate Start
-require 'pry'
+# require 'pry'
 
 class String
   def colorize(color_code); "\e[#{color_code}m#{self}\e[0m"; end
