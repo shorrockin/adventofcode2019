@@ -51,7 +51,7 @@ module Flat
       Directions::All.map do |direction|
         target_coord = coordinate.move(direction)
         target_data = at(target_coord)
-        if !filter_prop.nil? && target_data[filter_prop] != filter_value
+        if target_data.nil? || (!filter_prop.nil? && target_data[filter_prop] != filter_value)
           target_coord = nil
         end
         target_coord
@@ -71,6 +71,8 @@ module Flat
       attributes[property] = value
       attributes
     end
+
+    def after_from_lines; end;
 
     def stringify(
       symbol: :symbol, 
@@ -109,14 +111,14 @@ module Flat
       header + str
     end
 
-    def self.from_lines(lines, &blk)
-      grid = Grid.new
+    def self.from_lines(lines, grid: Grid.new, &blk)
       lines.each_with_index do |line, y|
         line.chars.each_with_index do |char, x|
           data = yield char, x, y
           grid.add(x, y, data)
         end
       end
+      grid.after_from_lines
       grid
     end
   end

@@ -1,16 +1,33 @@
 # frozen_string_literal: true
 # Advent Boilerplate Start
-# require 'pry'
 
 class String
   def colorize(color_code); "\e[#{color_code}m#{self}\e[0m"; end
+  def black; colorize(30); end
   def red; colorize(31); end
   def green; colorize(32); end
   def yellow; colorize(33); end
   def blue; colorize(34); end
   def pink; colorize(35); end
   def teal; colorize(36); end
+  def white; colorize(37); end
   def bold; colorize(1); end
+  def dark; colorize(2); end
+  def italic; colorize(3); end
+  def underline; colorize(4); end
+  def white_background; colorize(7); end
+  def black_background; colorize(40); end    
+  def red_background; colorize(41); end    
+  def green_background; colorize(42); end    
+  def yellow_background; colorize(43); end    
+  def blue_background; colorize(44); end    
+  def pink_background; colorize(45); end    
+  def teal_background; colorize(46); end    
+  def white_background; colorize(47); end    
+end
+
+module Symbols
+  Block = '█'
 end
 
 module Loggable
@@ -85,7 +102,7 @@ def log_call_on(target, method, *args)
   puts "  #{'-'.yellow} #{method}(#{arg_description}) == #{value_string(result)}"
 end
 
-def input(strip_newlines = true)
+def input(strip: true, strip_newline: true)
   # ARGV can only be used once
   return @input.dup unless @input.nil?
 
@@ -94,7 +111,13 @@ def input(strip_newlines = true)
   end
 
   @input ||= $<.map(&:to_s)
-  @input = input.map(&:strip) if strip_newlines
+  @input = if strip
+    @input.map(&:strip)
+  elsif strip_newline
+    @input.map {|i| i.gsub("\n", '')}
+  else
+    @input
+  end
   @input = @input[0] if @input.length == 1
   @input.dup # prevents alterations to source
 end
