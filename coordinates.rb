@@ -77,8 +77,7 @@ module Flat
     def stringify(
       symbol: :symbol, 
       filler: nil, 
-      line_labels: false, 
-      column_labels: false, 
+      labels: false,
       from: Coordinate.new(@start_x, @start_y), 
       to: Coordinate.new(@width, @height)
     )
@@ -86,8 +85,8 @@ module Flat
       column_label_height = to.x.to_s.length
       header = ''
 
-      if column_labels
-        prefix = ' '.rjust(line_label_width + 1, ' ') if line_labels # adjust for line labels
+      if labels
+        prefix = ' '.rjust(line_label_width + 1, ' ') 
 
         column_label_height.times.each do |line|
           header += prefix
@@ -103,7 +102,7 @@ module Flat
           data = at(Coordinate.new(x, y))
           raise "grid incomplete at #{x},#{y}" if data.nil? && filler.nil?
           str = data.nil? ? filler : data[symbol]
-          str = (y.to_s.rjust(line_label_width, ' ') + ' ' + str) if (line_labels && x == from.x)
+          str = (y.to_s.rjust(line_label_width, ' ') + ' ' + str) if (labels && x == from.x)
           str
         end.join('')
       end.join("\n")
