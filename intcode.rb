@@ -179,9 +179,41 @@ module Intcode
       return results.first if results.length == 1
       results
     end
+
+    def to_s; "Controller<output_buffer:#{@output_buffer}>"; end
   end
 
-  def to_s; "Controller<output_buffer:#{@output_buffer}>"; end
+  class ASCIIController < Controller
+    def initialize(intcode)
+      super
+      @intcode = intcode
+    end
+
+    def run(&on_output)
+      @results = []
+
+      intcode.writer = Proc.new do |output|
+        output = (output <= 128 ? output.chr : output.to_s)
+
+        if output != "\n"
+          @results << output
+        elsif 
+          response = yield(@results.join)
+
+          @results = []
+          response.chars.each do |char|
+            @output_buffer << char.ord 
+          end
+        end
+      end
+      intcode.run
+
+      @results.join
+    end
+  end
+
+
+
 end
 
 
