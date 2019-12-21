@@ -11,7 +11,7 @@ require './memoize'
 def parse(lines)
   Flat::Grid.from_lines(lines) do |char, x, y|
     case char
-    when '#' then {symbol: '#'.red, traversable: false}
+    when '#' then {symbol: Symbols::Block.teal, traversable: false}
     when '.' then {symbol: '.', traversable: true}
     when '@' then {symbol: '@'.yellow, traversable: true, start: true}
     else
@@ -24,18 +24,20 @@ def parse(lines)
   end
 end
 
-CacheKey = Struct.new(:from, :to)
-CacheValue = Struct.new(:distance, :path, :doors)
-
-def shortest_key_collection_path(grid)
+def shortest_key_collection_path(grid, draw = false)
   s = Solution.new(grid)
-  puts "Solving:\n#{grid.stringify}"
+  puts grid.stringify if draw
+
   out = s.shortest_key_collection_path
   out
 end
 
+CacheKey = Struct.new(:from, :to)
+CacheValue = Struct.new(:distance, :path, :doors)
+
 class Solution
   include RubyMemoized
+
   attr_accessor :grid, :bfs_cache
   attr_accessor :iterations, :cache_hits, :cache_miss
 
@@ -77,15 +79,12 @@ class Solution
       open_doors = []
 
       if valid && (min_distance.nil? || distance < min_distance)
-        puts "distance set: #{distance} / #{permutations} / iter #{@iterations} / hits #{@cache_hits} / miss #{cache_miss}"
         min_distance = distance
       end
     end
 
     min_distance
   end
-
-  # memoized
 
   def door_for_key(key)
     key_attributes = @grid.at(key)
@@ -108,7 +107,6 @@ class Solution
         bfs.path,
         bfs.path.select {|coord| @grid.at(coord)[:door] == true }
       )
-      # binding.pry if @bfs_cache[cache_key].doors.length > 0
       @bfs_cache[cache_key]
     end
 
@@ -127,7 +125,7 @@ part 1 do
   assert_call(6, :shortest_key_collection_path, parse(EXAMPLE_ONE))
   assert_call(86, :shortest_key_collection_path, parse(EXAMPLE_TWO))
   assert_call(132, :shortest_key_collection_path, parse(EXAMPLE_THREE))
-  # assert_call(136, :shortest_key_collection_path, parse(EXAMPLE_FOUR))
+  assert_call(136, :shortest_key_collection_path, parse(EXAMPLE_FOUR), true)
   assert_call(81, :shortest_key_collection_path, parse(EXAMPLE_FIVE))
   assert_call(123, :shortest_key_collection_path, parse(input))
 end
