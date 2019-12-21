@@ -25,92 +25,68 @@ def parse(lines)
 end
 
 def shortest_key_collection_path(grid, draw = false)
-  s = Solution.new(grid)
   puts grid.stringify if draw
-
-  out = s.shortest_key_collection_path
-  out
+  Solution.new(grid).shortest_path_distance
 end
 
-CacheKey = Struct.new(:from, :to)
-CacheValue = Struct.new(:distance, :path, :doors)
-
 class Solution
-  include RubyMemoized
-
-  attr_accessor :grid, :bfs_cache
-  attr_accessor :iterations, :cache_hits, :cache_miss
+  PathCacheKey   = Struct.new(:from, :to)
+  PathCacheValue = Struct.new(:keys_needed, :distance)
+  VisitedCache   = Struct.new(:from, :to, :with_keys)
 
   def initialize(grid)
-    @grid = grid
-    @bfs_cache = {}
-    @iterations = 0
-    @cache_hits = 0
-    @cache_miss = 0
+    @grid  = grid
+    @keys  = @grid.select(:key, true)
+    @start = @grid.find(:start, true)
+    @doors = @grid.select(:door, true)
+    @visited = {}
+    init_cache
   end
 
-  def shortest_key_collection_path
-    min_distance = nil
-    start_keys   = @grid.select(:key, true) 
-    permutations = Permutations.new(start_keys) 
+  # going through all the keys, for each one pre-compture the distance to the
+  # other keys along with what doors are required for this path, and save to 
+  # cache structure.
+  def init_cache
+    locations = @keys + [@start]
+    @cache    = {}
 
-    while(keys = permutations.next)
-      @iterations  += 1
-      distance      = 0
-      last_location = @grid.find(:start, true)
-      valid         = true
-      open_doors    = []
+    locations.each do |from|
+      locations.each do |to|
+        next if from == to # we'll never travel to ourself
+        next if to == @start # we'll never travel to the start, only from it
 
-      keys.each_with_index do |key, key_index|
-        result = cached_shortest_distance(last_location, key, open_doors)
-        if result.nil? || (!min_distance.nil? && (result.distance + distance) >= min_distance)
-          # if we can't get to this key, then skip over anything else trying to
-          # get to this key
-          permutations.next_increment_at = key_index
-          valid = false
-          break
-        end
-
-        distance     += result.distance
-        last_location = key
-        open_doors   << door_for_key(key)
-      end
-
-      open_doors = []
-
-      if valid && (min_distance.nil? || distance < min_distance)
-        min_distance = distance
+        result      = BFS.shortest_distance(@grid, from, to)
+        keys_needed = result.path.map {|coord| data = @grid.at(coord); data[:door] ? data[:door_value].downcase : nil }.compact
+        @cache[PathCacheKey.new(from, to)] = PathCacheValue.new(keys_needed, result.distance)
       end
     end
-
-    min_distance
   end
 
-  def door_for_key(key)
-    key_attributes = @grid.at(key)
-    @grid.find(:door_value, key_attributes[:key_value].upcase)
+  def shortest_path_distance
+    @keys.map do |key|
+      distance_from(@start, key, [], @keys - [key])
+    end.compact.min
   end
 
-  def cached_shortest_distance(from, to, open_doors)
-    cache_key = CacheKey.new(from, to)
+  def distance_from(from, to, with_keys, remaining)
+    visited_key = VisitedCache.new(from, to, with_keys)
+    return @visited[visited_key] if @visited.include?(visited_key)
 
-    result = if @bfs_cache.include?(cache_key)
-      @cache_hits += 1  
-      @bfs_cache[cache_key] 
-    else
-      @cache_miss += 1
-      bfs = BFS.shortest_distance(@grid, from, to)
-      raise "could not calculate path betwen #{from}/#{to}" if bfs.nil?
+    result = @cache[PathCacheKey.new(from, to)]
 
-      @bfs_cache[cache_key] = CacheValue.new(
-        bfs.distance,
-        bfs.path,
-        bfs.path.select {|coord| @grid.at(coord)[:door] == true }
-      )
-      @bfs_cache[cache_key]
-    end
+    return cache_visited(from, to, with_keys, nil) if (result.keys_needed - with_keys).any? # we don't have the keys we need
+    return cache_visited(from, to, with_keys, result.distance) unless remaining.any?
+    
+    remaining = remaining.map do |next_location|
+      distance_from(to, next_location, (with_keys + [@grid.at(to)[:key_value]]).sort, remaining - [next_location])
+    end.compact
 
-    return nil if (result.doors - open_doors).any?
+    return cache_visited(from, to, with_keys, nil) unless remaining.any?
+    cache_visited(from, to, with_keys, result.distance + remaining.min)
+  end
+
+  def cache_visited(from, to, with_keys, result)
+    @visited[VisitedCache.new(from, to, with_keys)] = result
     result
   end
 end
@@ -125,9 +101,9 @@ part 1 do
   assert_call(6, :shortest_key_collection_path, parse(EXAMPLE_ONE))
   assert_call(86, :shortest_key_collection_path, parse(EXAMPLE_TWO))
   assert_call(132, :shortest_key_collection_path, parse(EXAMPLE_THREE))
-  assert_call(136, :shortest_key_collection_path, parse(EXAMPLE_FOUR), true)
+  assert_call(136, :shortest_key_collection_path, parse(EXAMPLE_FOUR))
   assert_call(81, :shortest_key_collection_path, parse(EXAMPLE_FIVE))
-  assert_call(123, :shortest_key_collection_path, parse(input))
+  assert_call(4868, :shortest_key_collection_path, parse(input))
 end
 
 part 2 do

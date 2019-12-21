@@ -32,7 +32,7 @@ class BFS
 
   def shortest_distance(from, to, traversable_prop = :traversable)
     visited = Set.new
-    queue = Queue.new
+    queue   = Queue.new
 
     # mark all nodes that are not traversable as false
     @grid.select(traversable_prop, false).each {|coordinate| visited.add(visited_record(coordinate, nil)) }
