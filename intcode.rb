@@ -107,6 +107,8 @@ module Intcode
         else
           raise "unknown memory opcode (#{@program[@address]} / #{command}) at address #{@address}"
         end
+
+        return if @options[:run_once]
       end
 
       @halted = true
@@ -211,9 +213,6 @@ module Intcode
       @results.join
     end
   end
-
-
-
 end
 
 
