@@ -18,38 +18,47 @@ end
 def to_grid(lines)
   Flat::Grid.from_lines(lines) do |char, x, y|
     case char
-    when '.' then {symbol: EMPTY_SYMBOL, empty: true, proximity: 0}
+    when '.' then {symbol: EMPTY_SYMBOL, bug: false, proximity: 0}
     else; {symbol: BUG_SYMBOL, bug: true, proximity: 0}
     end
   end
 end
 
-def next_evolution(previous_grid)
-  previous_grid.points.reduce(Flat::Grid.new()) do |next_grid, (coord, data)|
-    neighbors = previous_grid.neighbors(coord, :bug, true)
-    if data[:bug] && neighbors.length != 1
-      next_grid.add(coord.x, coord.y, {symbol: EMPTY_SYMBOL, empty: true})
-    elsif data[:empty] && (neighbors.length == 1 || neighbors.length == 2)
-      next_grid.add(coord.x, coord.y, {symbol: BUG_SYMBOL, bug: true})
-    else
-      next_grid.add(coord.x, coord.y, data)
+def evolve(grid)
+  # reset the proximity on the grid
+  grid.points.each {|coord, data| grid.set(coord, :proximity, 0)}
+
+  # go through all bugs, increment proximity of all their neighbors by one
+  grid.select(:bug, true).each do |coord|
+    grid.neighbors(coord).each do |neighbor_coord| 
+      grid.set(neighbor_coord, :proximity, grid.get(neighbor_coord, :proximity) + 1)
     end
-    next_grid
   end
+
+  grid.points.each do |coord, data|
+    if (data[:bug] && data[:proximity] != 1)
+      data[:bug] = false 
+    elsif (!data[:bug] && (data[:proximity] == 1 || data[:proximity] == 2))
+      data[:bug] = true
+    end
+
+    data[:proximity] = 0 # need to reset otherwise hashes don't computer properly for equality
+    data[:symbol] = data[:bug] ? BUG_SYMBOL : EMPTY_SYMBOL
+  end
+
+  grid
 end
 
-def biodiversity_at_loop(starting_grid)
-  previous_grids = Set[starting_grid.hash]
-  next_grid      = next_evolution(starting_grid)
-  previous_grid  = next_grid
+def biodiversity_at_loop(grid)
+  previous = Set.new
 
-  while(!previous_grids.include?(next_grid.hash))
-    previous_grids.add(previous_grid.hash)
-    previous_grid = next_grid
-    next_grid     = next_evolution(previous_grid)
+  while(true)
+    break if previous.include?(grid.hash)
+    previous.add(grid.hash)
+    evolve(grid)
   end
 
-  biodiversity(next_grid)
+  biodiversity(grid)
 end
 
 class RecursiveGrid < ThreeD::Grid
@@ -76,8 +85,7 @@ part 1 do
 end
 
 part 2 do
-  grid = to_grid(input).select(:bug, true).reduce(RecursiveGrid.new(5, 5)) do |grid, coord|
-    grid.add(coord.x, coord.y, 0, {symbol: BUG_SYMBOL, bug: true})
-  end
-  binding.pry
+  # grid = to_grid(input).select(:bug, true).reduce(RecursiveGrid.new(5, 5)) do |grid, coord|
+  #   grid.add(coord.x, coord.y, 0, {symbol: BUG_SYMBOL, bug: true})
+  # end
 end

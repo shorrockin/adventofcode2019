@@ -55,7 +55,7 @@ module Flat
       @points.hash
     end
 
-    def neighbors(coordinate, filter_prop, filter_value)
+    def neighbors(coordinate, filter_prop = nil, filter_value = nil)
       Directions::All.map do |direction|
         target_coord = coordinate.move(direction)
         target_data = at(target_coord)
@@ -75,9 +75,13 @@ module Flat
     end
 
     def set(coordinate, property, value)
-      attributes = @points[coordinate]
+      attributes = at(coordinate)
       attributes[property] = value
       attributes
+    end
+
+    def get(coordinate, property)
+      at(coordinate)[property]
     end
 
     def after_from_lines; end;
