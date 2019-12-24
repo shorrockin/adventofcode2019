@@ -44,13 +44,13 @@ part 1 do
 end
 
 part 2 do
-  num_cards = 119315717514047
+  num_cards    = 119315717514047
   num_shuffles = 101741582076661
   previous = []
   deck = Deck.new(num_cards, parse(input))
   last_index = 2020
 
-  num_shuffles.times do |time|
+  10.times do |time|
     original = last_index
     last_index = deck.index_of_card(last_index)
     binding.pry if previous.include?(last_index)

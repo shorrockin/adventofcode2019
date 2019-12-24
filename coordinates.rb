@@ -47,6 +47,10 @@ module Flat
       @points[coordinate]
     end
 
+    def hash
+      @points.hash
+    end
+
     def neighbors(coordinate, filter_prop, filter_value)
       Directions::All.map do |direction|
         target_coord = coordinate.move(direction)
@@ -114,7 +118,7 @@ module Flat
       lines.each_with_index do |line, y|
         line.chars.each_with_index do |char, x|
           data = yield char, x, y
-          grid.add(x, y, data)
+          grid.add(x, y, data) 
         end
       end
       grid.after_from_lines
