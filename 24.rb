@@ -18,8 +18,8 @@ end
 def to_grid(lines)
   Flat::Grid.from_lines(lines) do |char, x, y|
     case char
-    when '.' then {symbol: EMPTY_SYMBOL, empty: true}
-    else; {symbol: BUG_SYMBOL, bug: true}
+    when '.' then {symbol: EMPTY_SYMBOL, empty: true, proximity: 0}
+    else; {symbol: BUG_SYMBOL, bug: true, proximity: 0}
     end
   end
 end
@@ -52,6 +52,16 @@ def biodiversity_at_loop(starting_grid)
   biodiversity(next_grid)
 end
 
+class RecursiveGrid < ThreeD::Grid
+  attr_accessor :width, :height, :center
+
+  def initialize(width, height)
+    super()
+    @center = Flat::Coordinate.new(@width / 2, @height / 2)
+  end
+
+end
+
 EXAMPLE = [
   '....#',
   '#..#.',
@@ -66,4 +76,8 @@ part 1 do
 end
 
 part 2 do
+  grid = to_grid(input).select(:bug, true).reduce(RecursiveGrid.new(5, 5)) do |grid, coord|
+    grid.add(coord.x, coord.y, 0, {symbol: BUG_SYMBOL, bug: true})
+  end
+  binding.pry
 end

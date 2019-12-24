@@ -20,23 +20,27 @@ module Flat
   end
   
   class Grid
-    attr_accessor :points, :width, :height, :start_x, :start_y
-    def initialize
-      @points  = {}
-      @width   = 0
-      @height  = 0
-      @start_x = nil
-      @start_y = nil
+    attr_accessor :points, :width, :height, :start_x, :start_y, :metadata
+    def initialize(width: 0, height: 0, metadata: {})
+      @points   = {}
+      @width    = 0
+      @height   = 0
+      @start_x  = nil
+      @start_y  = nil
+      @metadata = metadata
     end
 
     def add(x, y, data = {})
-      point = Coordinate.new(x, y)
-      @points[point] = data
-      @width  = (point.x + 1) if point.x >= width
-      @height = (point.y + 1) if point.y >= height
-      @start_x = x if @start_x.nil? || x < @start_x
-      @start_y = y if @start_y.nil? || y < @start_y
-      data 
+      add_coordinate(Coordinate.new(x, y), data)
+    end
+
+    def add_coordinate(coordinate, data = {})
+      @points[coordinate] = data
+      @width  = (coordinate.x + 1) if coordinate.x >= width
+      @height = (coordinate.y + 1) if coordinate.y >= height
+      @start_x = coordinate.x if @start_x.nil? || coordinate.x < @start_x
+      @start_y = coordinate.y if @start_y.nil? || coordinate.y < @start_y
+      self
     end
 
     def contains?(coordinate)
@@ -118,12 +122,30 @@ module Flat
       lines.each_with_index do |line, y|
         line.chars.each_with_index do |char, x|
           data = yield char, x, y
-          grid.add(x, y, data) 
+          grid.add(x, y, data) unless data[:ignore]
         end
       end
       grid.after_from_lines
       grid
     end
   end
+end
 
+module ThreeD
+  Coordinate = Struct.new(:x, :y, :z) do
+    def move(direction, times = 1); Coordinate.new(x + (direction.x * times), y + (direction.y * times), z); end
+    def to_s; "Coordinate<x:#{x},y:#{y},#{z}"; end
+  end
+
+  class Grid < Flat::Grid
+    attr_accessor :points
+
+    def initialize
+      super
+    end
+
+    def add(x, y, z, data = {})
+      add_coordinate(Coordinate.new(x, y, z), data)
+    end
+  end
 end
