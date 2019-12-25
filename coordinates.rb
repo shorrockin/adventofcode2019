@@ -67,7 +67,11 @@ module Flat
     end
 
     def select(property, value)
-      @points.keys.select {|coordinate| at(coordinate)[property] == value}
+      @points.keys.select do |coordinate| 
+        if (attribute = at(coordinate))
+          attribute[property] == value
+        end
+      end
     end
 
     def find(property, value)
@@ -75,9 +79,10 @@ module Flat
     end
 
     def set(coordinate, property, value)
-      attributes = at(coordinate)
-      attributes[property] = value
-      attributes
+      if (attributes = at(coordinate))
+        attributes[property] = value
+        attributes
+      end
     end
 
     def get(coordinate, property)
